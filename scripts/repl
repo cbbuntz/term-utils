@@ -1,0 +1,123 @@
+#!/usr/bin/zsh
+color1="\e[2A$(rgb b555 012)"
+color2="$(rgb b553)"
+
+detect_filetype(){
+  if [[ -f "$*" ]] ; then
+
+    fpath="$(realpath $*)"
+    fname=""${fpath##*/}""
+    ftype="$(file -b $fpath)"
+    ftype="$ftype; $(file -b --mime $fpath)"
+    execmd=''
+
+    typeset -A types
+    types=(
+    zsh "zsh $fpath"
+    bash "bash $fpath"
+    sh "sh $fpath"
+    c "gcc $fpath && ./a.out"
+    c++ "g++ $fpath && ./a.out"
+    ruby "ruby $fpath"
+    python "python $fpath"
+    )
+
+    for k in "${(@k)types}"; do
+      if echo $ftype | grep -iwqF "$k"; then
+        execmd="$types[$k]"
+        break
+      fi
+    done
+
+    if [[ $execmd =~ '.' ]] ; then
+      echo "$execmd"
+    else
+      echo "$fpath"
+    fi
+  else
+    # Not a file
+    echo "$*"
+  fi
+}
+
+
+check_mtimes(){
+  k=0
+  tsum_old=$(( tsum ))
+  tsum=0
+  for i in ./* ; do
+    t="$(stat --printf "%Y" $i)"
+    (( k++ ))
+    tsum=$(( tsum + t ))
+  done
+  if [[ $(( tsum == tsum_old )) == 0 ]] ; then
+    changed=$(( tsum != tsum_old ))
+  else 
+    unset changed
+  fi
+}
+# 
+# check_mtimes(){
+#   k=0
+#   tsum_old=$(( tsum ))
+#   tsum=0
+#   # for i in ./**/** ; do
+#    
+#   for i in "$CHECKPATH/"* ; do
+#     t="$(stat --printf "%Y" $i)"
+#     (( k++ ))
+#     tsum=$(( tsum + t ))
+#   done
+#   if [[ $(( tsum == tsum_old )) == 0 ]] ; then
+#     changed=$(( tsum != tsum_old ))
+#   else 
+#     unset changed
+#   fi
+# }
+
+_repl(){
+  repl_cmd="$(detect_filetype $*)"
+  
+  list=($(echo ./* | sed 's/\.\///g'))
+  tsum=0
+  tsum_old=0
+  changed=0
+
+  changes=0
+  while [[ 1 ]] ; do
+    check_mtimes
+    if [[ $changed ]] ; then
+      clear
+      rgb 000 012
+      rpt $(tput cols) ' ' ; echo 
+      rgb 555 012
+      rpt $(tput cols) '_' ; echo
+      printf "${color1} Running: ${color2}${repl_cmd}\e[0;0m\n\n\n"
+          
+      eval "$repl_cmd"
+      exit_code=$?
+      check_mtimes
+
+      echo "\e[0;1m"
+      rpt $(tput cols) '_' ; echo
+      rgb 000 012
+      rpt $(tput cols) ' ' ; echo
+      printf "\e[1B$color1 Exited with code $exit_code ${color2}\
+              $changes file modifications\e[0m\n"
+      (( changes ++ ))
+    fi
+    sleep 0.5
+  done
+}
+
+if [ -d $1 ] ; then
+  CHECKPATH="$(realpath "$1")"
+  _repl $2
+elif [ -d $2 ] ; then
+  CHECKPATH="$(realpath "$2")"
+  _repl $1
+else
+  CHECKPATH="$(realpath .)"
+  _repl $@
+fi
+
