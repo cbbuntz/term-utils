@@ -4,7 +4,6 @@
 
 C binaries and corresponding modular headers for drop-in functionality.
 
-
 * **say**
 A hybrid of `echo` and `cat`  
 It prints the argument vector, similar to `echo -n`, then it prints any text piped to it, similar to `cat`, but unlike `cat`, it will not block when no input is given.  It may be useful in certain scripting situations when you aren't sure where the input is going to come from.  
