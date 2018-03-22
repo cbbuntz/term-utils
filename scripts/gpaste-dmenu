@@ -1,0 +1,7 @@
+#!/usr/bin/bash
+
+(gpaste-client history && echo) \
+  | /usr/bin/grep -P '^\d+: ' \
+  | dmenu -fn 'Droid Sans Mono-15' -l 50 -dim 0.3 -p '>>' \
+  | cut -d: -f1 \
+  | xargs -r gpaste-client select

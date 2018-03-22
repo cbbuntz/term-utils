@@ -1,0 +1,1 @@
+dmenu -fn 'DejaVu Sans Mono-12' -l 50 -p '>' -nb '#100816' -nf '#aaaaaa' -sf '#ffffff' -sb '#334455' -i

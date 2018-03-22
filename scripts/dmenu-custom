@@ -1,0 +1,1 @@
+dmenu -fn 'DejaVu Sans Mono for Powerline Book-11' -p '>' -nb '#100816' -nf '#aaaaaa' -sf '#ffffff' -sb '#334455' -i

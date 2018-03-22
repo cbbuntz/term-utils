@@ -1,0 +1,52 @@
+#!/usr/bin/zsh
+
+# reset map
+setxkbmap
+
+array=(
+  " 0. XF86AudioRaiseVolume  XF86AudioLowerVolume"     
+  " 1. Up                    Down"     
+  " 2. Down                  Up"       
+  " 3. Right                 Left"     
+  " 4. Left                  Right"    
+  " 5. Prior                 Next "
+  " 6. Next                  Prior "
+  " 7. apostrophe            semicolon"
+  " 8. k                     j        "
+  " 9. j                     k        "
+  "10. KP_Subtract           KP_Add"
+  "11. KP_Add                KP_Subtract"
+)
+
+menu_print (){
+  for i in $array ; do
+    echo $i
+  done
+}
+
+menu_fzf (){
+  menu_print \
+    | fzf --reverse --height=50% \
+    --header="    Vol+                  Vol-"
+}
+  
+menu_dmenu (){
+  menu_print \
+    | dmenu -fn 'DejaVu Sans Mono-14' -l 50 -p '>' -nb '#100816' -nf '#aaaaaa' -sf '#ffffff' -sb '#334455' -i -p "Vol+ Vol- :"
+}
+
+if [[ `tty` =~ 'not a tty' ]] ; then
+  selection=( $(menu_dmenu) )
+else
+  selection=( $(menu_fzf) )
+fi
+
+if [[ $? == 0 ]] ; then
+  Up=$selection[2]
+  Down=$selection[3]
+  echo "^ $Up     v $Down"
+  xmodmap -e "keysym XF86AudioRaiseVolume = $Up"
+  xmodmap -e "keysym XF86AudioLowerVolume = $Down"
+else
+  echo "No selection. Volume mapping reset."
+fi

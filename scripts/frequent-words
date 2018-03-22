@@ -1,0 +1,54 @@
+#!/usr/bin/zsh
+
+local script_name="$0"
+
+unique_words() {
+  perl -pe 's/\W+|(\b\d+)/\n/gs; s/^\w{0,'$1'}\n//gm' \
+    | awk '{a[$1]++}END{for(i in a){print a[i] "\t" i}}' 
+}
+
+usage() {
+cat <<EOF
+
+usage: $script_name [options]
+
+  Options
+    --max-words=[n]   When n > 0, shows most frequent words
+                      When n < 0, shows least frequent words
+    --min-length=[n]
+    --no-sort
+
+EOF
+}
+
+advanced() {
+  local maxwords=0
+  local minlen=1
+  local sort=true
+
+  while (( ${#*[@]} > 0 )) ; do
+    if [[ $1 =~ '^--max-?(words)?' ]] ; then
+      maxwords=${1//*=/}
+      maxwords=${maxwords//[^0-9\-]/}
+    elif [[ $1 =~ '^--min-?(len)?(ngth)?' ]] ; then
+      minlen=${1//[^0-9]/}
+    elif [[ $1 =~ '^--no-?sort' ]] ; then
+      unset sort
+    elif [[ $1 =~ '-?-h(elp)?' ]] ; then
+      usage
+      return
+    fi
+    shift
+  done
+
+  unique_words $minlen \
+  | ([[ $sort ]] && sort -rn --parallel=4 || cat) \
+  | sed -nE '/^[^1]/ {s/[0-9]+\s*// p}' \
+  |  ( (( $maxwords > 0 )) && head -$maxwords \
+  || ((( $maxwords < 0 )) && tail $maxwords) \
+  || cat )
+  
+}
+
+advanced $@
+
